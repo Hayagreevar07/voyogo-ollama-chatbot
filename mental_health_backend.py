@@ -1,14 +1,15 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from langchain_ollama import OllamaLLM
-
+import requests
+import os
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # Allow all origins; adjust if needed
 
-# Load LLaMA3 model via Ollama
-llm = OllamaLLM(model="llama3")
+# OpenRouter API Key (set as environment variable in Render) or hardcode for testing
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY") or "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"
 
+# Crisis safety terms
 CRISIS_TERMS = ["suicide", "self-harm", "kill myself", "end my life"]
 CRISIS_MESSAGE = (
     "It sounds like you are in crisis. "
@@ -16,17 +17,38 @@ CRISIS_MESSAGE = (
     "In India, you can call the Vandrevala Helpline: 1860 266 2345 or 9152987821."
 )
 
+# OpenRouter LLaMA3 model
+OPENROUTER_MODEL = "meta-llama/Llama-3.3-70b-instruct"
+
 @app.route("/chat", methods=["POST"])
 def chat():
-    user_message = request.json.get("message", "").lower()
+    user_message = request.json.get("message", "").strip()
 
-    # Crisis keyword safety
-    if any(term in user_message for term in CRISIS_TERMS):
+    # Safety check
+    if any(term in user_message.lower() for term in CRISIS_TERMS):
         return jsonify({"reply": CRISIS_MESSAGE})
 
-    # Get response from LLaMA3
-    reply = llm(user_message)
+    # Call OpenRouter API
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": OPENROUTER_MODEL,
+        "messages": [{"role": "user", "content": user_message}]
+    }
+
+    try:
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", json=payload, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        reply = data["choices"][0]["message"]["content"]
+    except Exception as e:
+        print("Error calling OpenRouter:", e)
+        reply = "Sorry, the bot is offline."
+
     return jsonify({"reply": reply})
 
 if __name__ == "__main__":
+    # Use host="0.0.0.0" for Render deployment
     app.run(host="0.0.0.0", port=5000)
