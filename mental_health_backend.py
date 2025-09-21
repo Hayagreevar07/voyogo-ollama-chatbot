@@ -4,12 +4,12 @@ import requests
 import os
 
 app = Flask(__name__)
-CORS(app)  # Allow all origins; adjust if needed
+CORS(app)
 
-# OpenRouter API Key (set as environment variable in Render) or hardcode for testing
+# Use your OpenRouter API key
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY") or "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"
 
-# Crisis safety terms
+# Crisis keywords for safety
 CRISIS_TERMS = ["suicide", "self-harm", "kill myself", "end my life"]
 CRISIS_MESSAGE = (
     "It sounds like you are in crisis. "
@@ -17,8 +17,8 @@ CRISIS_MESSAGE = (
     "In India, you can call the Vandrevala Helpline: 1860 266 2345 or 9152987821."
 )
 
-# OpenRouter LLaMA3 model
-OPENROUTER_MODEL = "meta-llama/Llama-3.3-70b-instruct"
+# OpenRouter model
+OPENROUTER_MODEL = "meta-llama/Llama-3.3-8b-instruct"
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -28,7 +28,7 @@ def chat():
     if any(term in user_message.lower() for term in CRISIS_TERMS):
         return jsonify({"reply": CRISIS_MESSAGE})
 
-    # Call OpenRouter API
+    # OpenRouter API call
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json"
@@ -39,7 +39,11 @@ def chat():
     }
 
     try:
-        response = requests.post("https://openrouter.ai/api/v1/chat/completions", json=payload, headers=headers)
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            json=payload,
+            headers=headers
+        )
         response.raise_for_status()
         data = response.json()
         reply = data["choices"][0]["message"]["content"]
@@ -50,5 +54,4 @@ def chat():
     return jsonify({"reply": reply})
 
 if __name__ == "__main__":
-    # Use host="0.0.0.0" for Render deployment
     app.run(host="0.0.0.0", port=5000)
