@@ -7,7 +7,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Use your OpenRouter API key
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY") or "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"
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY") or "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"
 
 # Crisis keywords for safety
 CRISIS_TERMS = ["suicide", "self-harm", "kill myself", "end my life"]
