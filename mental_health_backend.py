@@ -1,12 +1,13 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from langchain_ollama import Ollama
+from langchain_ollama import OllamaLLM
+
 
 app = Flask(__name__)
 CORS(app)
 
 # Load LLaMA3 model via Ollama
-llm = Ollama(model="llama3")
+llm = OllamaLLM(model="llama3")
 
 CRISIS_TERMS = ["suicide", "self-harm", "kill myself", "end my life"]
 CRISIS_MESSAGE = (
